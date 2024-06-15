@@ -5,7 +5,7 @@ import joblib
 import numpy as np
 
 app = Flask(__name__)
-
+# Load pre-trained model
 model = joblib.load('cognitive_fatigue_model.pk')
 
 
@@ -15,6 +15,8 @@ def home():
 
 
 def calculate_risk_score(features):
+    # Mock implementation: In a real-world scenario, this would use more sophisticated logic
+    # For demonstration, we consider a high risk if any of the critical features are beyond a threshold
     heart_rate = features['heart_rate']
     screen_time = features['screen_time']
     self_reported_fatigue = features['self_reported_fatigue']
