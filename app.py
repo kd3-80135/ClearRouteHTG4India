@@ -15,32 +15,58 @@ def home():
 
 
 def calculate_risk_score(features):
-    # Mock implementation: In a real-world scenario, this would use more sophisticated logic
-    # For demonstration, we consider a high risk if any of the critical features are beyond a threshold
-    heart_rate = features['heart_rate']
-    screen_time = features['screen_time']
-    self_reported_fatigue = features['self_reported_fatigue']
+    try:
+        heart_rate = features['heart_rate']
+        screen_time = features['screen_time']
+        self_reported_fatigue = features['self_reported_fatigue']
 
-    risk_score = 0
-    if heart_rate >= 90 or screen_time > 240 or self_reported_fatigue >= 4:
-        risk_score = 3 #High Risk
-    elif heart_rate >= 80 or screen_time > 100 or self_reported_fatigue == 3:
-        risk_score = 2 #Medium Risk
-    else:
-        risk_score = 1
-    return risk_score
+        risk_score = 0
+        if heart_rate >= 90 or screen_time > 240 or self_reported_fatigue >= 4:
+            risk_score = 3  # High Risk
+        elif heart_rate >= 80 or screen_time > 100 or self_reported_fatigue == 3:
+            risk_score = 2  # Medium Risk
+        else:
+            risk_score = 1
+        
+        return risk_score
+    
+    except KeyError as e:
+        raise ValueError(f'Missing required key in features: {str(e)}')
+    except TypeError as e:
+        raise ValueError(f'Invalid type in features: {str(e)}')
+    except Exception as e:
+        raise RuntimeError(f'Error in calculate_risk_score: {str(e)}')
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    data = request.get_json()
-    print(data)
-    features = pd.DataFrame([data])
-    prediction = model.predict(features)
-    risk_score = calculate_risk_score(data)
-    return jsonify({
-        'fatigue_level':int(prediction),
-        'risk_score': risk_score
-    })
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No input data provided'}), 400
+        
+        # Validate input data keys
+        expected_keys = ['heart_rate', 'body_temperature', 'screen_time', 
+                         'activity_level', 'self_reported_fatigue', 'mood']
+        for key in expected_keys:
+            if key not in data:
+                return jsonify({'error': f'Missing required key: {key}'}), 400
+        
+        # Convert input data to DataFrame
+        features = pd.DataFrame([data])
+        
+        # Perform prediction
+        prediction = model.predict(features)
+        
+        # Calculate risk score
+        risk_score = calculate_risk_score(data)
+        
+        return jsonify({
+            'fatigue_level': int(prediction),
+            'risk_score': risk_score
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
